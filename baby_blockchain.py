@@ -69,7 +69,10 @@ class Account:
         self._balance = int
 
     def genAccount(self):
-        return hex(int.from_bytes(self._public_key, "little"))
+        hash_object = hashlib.sha1(self._public_key)
+        pbHash = hash_object.digest()
+        account = RIPEMD160.new(pbHash)
+        return account.hexdigest()
 
     def addKeyPairToWallet(self):
         file_out = open("private_key.pem", "wb")
