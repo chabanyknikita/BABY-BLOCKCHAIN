@@ -1,7 +1,10 @@
+from Crypto.Hash import SHA
+from Crypto.Hash import RIPEMD160
 from Crypto.PublicKey import RSA
 from Crypto.Signature import PKCS1_v1_5
 import Crypto.Hash.SHA512
-
+import hashlib
+import collections
 
 class KeyPair:
     private_key: str
@@ -118,3 +121,43 @@ class Account:
                 'index': index})
         else:
             return "YOU DONT HAVE ENOUGH MONEY!"
+        
+class Operation:
+    def __init__(self, sender=Account(), recipient=Account(), amount=0, signature=b''):
+        self.sender = sender
+        self.recipient = recipient
+        self.amount = amount
+        self.signature = signature
+
+    def getSignature(self):
+        private_key = open("private_key.pem", "rb")
+        message = self.sender.genAccount
+        self.signature = Signature().signData(message.encode(encoding='utf-8'), private_key.read())
+        return self.signature
+
+    def createOperation(self):
+        return collections.OrderedDict({
+            'sender': self.sender,
+            'recipient': self.recipient,
+            'value': self.amount,
+            'signature': Operation().getSignature()})
+
+    def signData(self, operation):
+        private_key = open("private_key.pem", "rb")
+        public_key = open("public_key.pem", "rb")
+        self.signature = Signature().signData(str(operation).encode(encoding='utf-8'), private_key.read())
+        return Signature().verifySignature(self.signature, str(operation).encode('utf-8'), public_key.read())
+
+
+class Transaction:
+
+    def __init__(self, transactionId=0, transaction=[], nonce=0):
+        self.transactionId = transactionId
+        self.transaction = transaction
+        self.nonce = nonce
+
+    def createOperation(self, transaction, nonce):
+        return collections.OrderedDict({
+            'transactionId': hashlib.sha1(bytes(self.transaction)).hexdigest(),
+            'Tansactions': transaction,
+            'nonce': nonce})
