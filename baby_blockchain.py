@@ -6,6 +6,17 @@ import Crypto.Hash.SHA512
 import hashlib
 import collections
 
+class HASH:
+    def SHA1(self, *message):
+        hashing_text = ""
+        h = hashlib.sha1()
+        for mes in message:
+            hashing_text += str(mes)
+
+        h.update(hashing_text.encode('utf-8'))
+        return h.hexdigest()
+
+
 class KeyPair:
     private_key: str
     public_key: str
@@ -61,7 +72,8 @@ class Signature:
         message = 'Signature RSA'
         signature = Signature().signData(message.encode(encoding='utf-8'), private_key.read())
         print(signature)
-        
+
+
 class Account:
     def __init__(self):
         key = RSA.generate(2048)
@@ -69,8 +81,9 @@ class Account:
         self._public_key = key.publickey().export_key()
         self._signer = PKCS1_v1_5.new(self._private_key)
         self._wallet = list()
-        self._balance = int
+        self._balance = 0
 
+    @property
     def genAccount(self):
         hash_object = hashlib.sha1(self._public_key)
         pbHash = hash_object.digest()
@@ -114,14 +127,15 @@ class Account:
         return Account().verifySignature(signature, message.encode('utf-8'), self._public_key)
 
     def createPaymentOp(self, Account, amount, index):
-        if self._balance > amount:
+        if self._balance >= amount:
             return collections.OrderedDict({
                 'recipient': Account,
                 'value': amount,
                 'index': index})
         else:
             return "YOU DONT HAVE ENOUGH MONEY!"
-        
+
+
 class Operation:
     def __init__(self, sender=Account(), recipient=Account(), amount=0, signature=b''):
         self.sender = sender
@@ -158,6 +172,7 @@ class Transaction:
 
     def createOperation(self, transaction, nonce):
         return collections.OrderedDict({
-            'transactionId': hashlib.sha1(bytes(self.transaction)).hexdigest(),
+            'transactionId': HASH().SHA1(self.transaction,self.nonce),
             'Tansactions': transaction,
             'nonce': nonce})
+
