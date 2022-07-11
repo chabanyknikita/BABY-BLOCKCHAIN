@@ -150,11 +150,7 @@ class Operation:
         return self.signature
 
     def createOperation(self):
-        return collections.OrderedDict({
-            'sender': self.sender,
-            'recipient': self.recipient,
-            'value': self.amount,
-            'signature': Operation().getSignature()})
+        return self.sender, self.recipient, self.amount, Operation().getSignature()
 
     def signData(self, operation):
         private_key = open("private_key.pem", "rb")
@@ -162,17 +158,86 @@ class Operation:
         self.signature = Signature().signData(str(operation).encode(encoding='utf-8'), private_key.read())
         return Signature().verifySignature(self.signature, str(operation).encode('utf-8'), public_key.read())
 
+    def __str__(self):
+        return ("Sender: %s\nRecipient: %s\nAmount: %s\nSignature: %s\n" % (
+            self.sender, self.recipient, self.amount, Operation().getSignature()))
+
 
 class Transaction:
 
-    def __init__(self, transactionId=0, transaction=[], nonce=0):
-        self.transactionId = transactionId
+    def __init__(self, transaction=[], nonce=0):
         self.transaction = transaction
         self.nonce = nonce
 
     def createOperation(self, transaction, nonce):
         return collections.OrderedDict({
-            'transactionId': HASH().SHA1(self.transaction,self.nonce),
+            'transactionId': HASH().SHA1(self.transaction, self.nonce),
             'Tansactions': transaction,
             'nonce': nonce})
 
+    def __str__(self):
+        return ("TransactionID: %s\nTransaction: %s\nnonce: %s" % (
+            HASH().SHA1(self.transaction, self.nonce), self.transaction, self.nonce))
+
+
+class Block():
+    blockID = None
+    previous_hash = "0" * 64
+    transactions = None
+    nonce = 0
+
+    def __init__(self, transactions, number=0):
+        self.transactions = transactions
+        self.number = number
+
+    def blockID(self):
+        if self.number == 0:
+            return "Genesis"
+        else:
+            return HASH().SHA1(self.number, self.previous_hash, self.transactions, self.nonce)
+
+    def __str__(self):
+        return ("Block#: %s\nHash: %s\nPrevious Hash: %s\nTransactions:\n%s\nNonce: %s\n" % (
+            self.number, self.blockID(), self.previous_hash, self.transactions, self.nonce))
+
+
+class Blockchain():
+    difficulty = 4
+
+    def __init__(self, chain=[]):
+        self.chain = chain
+
+    def remove(self, block):
+        self.chain.remove(block)
+
+    def initBlockchain(self, block):
+        self.chain.append(block)
+
+    def mine(self, block):
+        try:
+            block.previous_hash = self.chain[-1].blockID()
+        except IndexError:
+            pass
+
+        while True:
+            if block.blockID()[:self.difficulty] == '0' * self.difficulty:
+                self.initBlockchain(block)
+                break
+            else:
+                block.nonce += 1
+
+    def validateBlock(self):
+        for i in range(2, len(self.chain)):
+            _previous = self.chain[i].previous_hash
+            _current = self.chain[i - 1].blockID()
+            ftx = self.chain[i].transactions
+            if _previous != _current or _current[:self.difficulty] != "0" * self.difficulty and ftx == ftx:
+                return False
+
+        return True
+
+    def getTokenFromFaucet(self, account, amount):
+        return ("Account: %s Amount: %s" % (account, amount))
+
+    def showCoinDatabase(self, database):
+        return ("Table: %s" % (database))
